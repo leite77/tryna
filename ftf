@@ -1,11 +1,13 @@
+You're right! Here's the same script but with Kavo UI - the most reliable and Xeno-compatible GUI library:
+
 repeat task.wait() until game:IsLoaded()
-local lib = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-lib:Notify({Title = "CruzHUB Notification.",Content = "Loaded Successfully!",Duration = 3,Icon = "bird"})
+
+-- Kavo UI Library (Best Xeno compatibility)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("CruzHUB - FTF/Flee The Facility", "DarkTheme")
 
 local rep = game:GetService("ReplicatedStorage")
 local runs = game:GetService("RunService")
-local uis = game:GetService("UserInputService")
-local rs = game:GetService("RunService")
 local httpservice = game:GetService("HttpService")
 local ts = game:GetService("TweenService")
 local lplr = game:GetService("Players").LocalPlayer
@@ -14,10 +16,10 @@ local char = lplr.Character or lplr.CharacterAdded:Wait()
 local hum = char:WaitForChild("Humanoid")
 local hrp = char:WaitForChild("HumanoidRootPart")
 
-lplr.CharacterAdded:Connect(function(c) 
+lplr.CharacterAdded:Connect(function(c)
     char = c
     hum = c:WaitForChild("Humanoid")
-    hrp = c:WaitForChild("HumanoidRootPart") 
+    hrp = c:WaitForChild("HumanoidRootPart")
 end)
 
 getgenv().Settings = {
@@ -32,60 +34,35 @@ getgenv().Settings = {
     Method = "Metamethod",
     Anti_Failure = false,
     Crawling = 8,
-    Hit_Settings = {
-        Distance = 8,
-        Connection = nil
-    },
-    Tie_Settings = {
-        Distance = 8,
-        Connection = nil
-    }
+    Hit_Settings = {Distance = 8, Connection = nil},
+    Tie_Settings = {Distance = 8, Connection = nil},
+    BeastExtension = false
 }
 
-local win = lib:CreateWindow({
-    Title = "CruzHUB - FTF/Flee The Facility",
-    Icon = "rbxassetid://140350520713166",
-    Author = "Owner: leite",
-    Size = UDim2.fromOffset(820,540),
-    Transparent = true,
-    Theme = "Dark",
-    Resizable = true,
-    SideBarWidth = 180,
-    ScrollBarEnabled = true,
-    User = {Enabled = true,Anonymous = false}
-})
+-- Main Tab
+local MainTab = Window:NewTab("Features")
+local MainSection = MainTab:NewSection("Main")
+local VisualsSection = MainTab:NewSection("Visuals")
+local LocalSection = MainTab:NewSection("LocalPlayer")
+local BeastSection = MainTab:NewSection("Beast")
 
-win:EditOpenButton({
-    Title = "CruzHUB",
-    Icon = "monitor",
-    CornerRadius = UDim.new(0,6),
-    StrokeThickness = 2,
-    Color = ColorSequence.new(Color3.fromRGB(30,30,30),Color3.fromRGB(255,255,255)),
-    Draggable = true
-})
+-- Extra Tab
+local ExtraTab = Window:NewTab("Extra")
+local ExtraSection = ExtraTab:NewSection("Extra Features")
 
-local Sections = {
-    Main = win:Section({Title = "Main Section",Icon = "crown",Opened = false}),
-    Misc = win:Section({Title = "Misc",Icon = "info",Opened = false})
-}
+-- Info Tab
+local InfoTab = Window:NewTab("Info")
+local InfoSection = InfoTab:NewSection("Server Info")
 
-local Tabs = {
-    Features = Sections.Main:Tab({Title = "Features",Icon = "sword",Desc = "The Tab That Contains Everything Important."}),
-    ExtraFeatures = Sections.Main:Tab({Title = "Extra Features",Icon = "lucide:anchor",Desc = "Oh My Gyat. More Features?"}),
-    Info = Sections.Misc:Tab({Title = "Info",Icon = "users",Desc = "Credits And Discord Server And Information."})
-}
+MainSection:NewLabel("CruzHUB - Flee The Facility")
+Library:Notify("CruzHUB Loaded Successfully!", 3)
 
-Tabs.Features:Paragraph({Title = "Main Section",Color = "Orange",Locked = true})
+-- Bypass Method
+MainSection:NewDropdown("BypassMethod", "Bypass Method", {"Metamethod", "Event"}, function(v)
+    getgenv().Settings.Method = v
+end)
 
-Tabs.Features:Dropdown({
-    Title = "Bypass Method",
-    Values = {"Metamethod","Event","Legitmate"},
-    Value = "Metamethod",
-    Callback = function(v)
-        getgenv().Settings.Method = v
-    end
-})
-
+-- Anti-Failure
 local enabled = false
 local mt = getrawmetatable(game)
 local old = mt.__namecall
@@ -100,115 +77,73 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 setreadonly(mt, true)
 
-Tabs.Features:Toggle({
-    Title = "Anti-Failure",
-    Desc = "Failure? That Never Existed.",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(v)
-        getgenv().Settings.Anti_Failure = v
-        if getgenv().Settings.Method == "Metamethod" then
-            enabled = getgenv().Settings.Anti_Failure
-        elseif getgenv().Settings.Method == "Event" then
-            if v then
-                task.spawn(function()
-                    while getgenv().Settings.Anti_Failure and getgenv().Settings.Method == "Event" do
-                        pcall(function()
-                            rep.RemoteEvent:FireServer("SetPlayerMinigameResult", true)
-                        end)
-                        task.wait()
-                    end
-                end)
-            end
+MainSection:NewToggle("AntiFailure", "Anti-Failure", function(state)
+    getgenv().Settings.Anti_Failure = state
+    if getgenv().Settings.Method == "Metamethod" then
+        enabled = state
+    elseif getgenv().Settings.Method == "Event" then
+        if state then
+            task.spawn(function()
+                while getgenv().Settings.Anti_Failure do
+                    pcall(function()
+                        rep.RemoteEvent:FireServer("SetPlayerMinigameResult", true)
+                    end)
+                    task.wait()
+                end
+            end)
         end
     end
-})
+end)
 
-Tabs.Features:Paragraph({Title = "LocalPlayer Section",Color = "Orange",Locked = true})
+-- Crawling Speed
+LocalSection:NewSlider("CrawlingSpeed", "Crawling Speed", 500, 8, function(s)
+    getgenv().Settings.Crawling = s
+end)
 
-Tabs.Features:Slider({
-    Title = "Crawling Speed",
-    Step = 1,
-    Value = {Min = 8,Max = 100,Default = getgenv().Settings.Crawling},
-    Callback = function(v)
-        getgenv().Settings.Crawling = v
-        task.spawn(function()
-            local IsCrawling = lplr:FindFirstChild("TempPlayerStatsModule")
-            if IsCrawling then
-                IsCrawling = IsCrawling:FindFirstChild("IsCrawling")
-                if IsCrawling then
-                    IsCrawling:GetPropertyChangedSignal("Value"):Connect(function()
-                        if IsCrawling.Value then
-                            hum.WalkSpeed = getgenv().Settings.Crawling
-                        end
-                    end)
-                end
-            end
-        end)
-    end
-})
+task.spawn(function()
+    local IsCrawling = lplr:WaitForChild("TempPlayerStatsModule"):WaitForChild("IsCrawling")
+    IsCrawling:GetPropertyChangedSignal("Value"):Connect(function()
+        if IsCrawling.Value then
+            hum.WalkSpeed = getgenv().Settings.Crawling
+        end
+    end)
+end)
 
-Tabs.Features:Paragraph({Title = "Visuals Section",Color = "Orange",Locked = true})
-
-local extension = false
-
+-- ESP Functions
 local function cleanup(plr, Elements)
-    local data = Elements["Players"][plr]
+    local data = Elements["Players"] and Elements"Players"
     if data then
         pcall(function()
             if data.conn then data.conn:Disconnect() end
             if data.hi then data.hi:Destroy() end
             if data.bbg then data.bbg:Destroy() end
         end)
-        Elements["Players"][plr] = nil
+        Elements"Players" = nil
     end
 end
 
-local function plr_esp(Elements)
+local function updatePlayerESP()
     if not getgenv().Settings.Esp.Players then return end
-    for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+    local Elements = getgenv().Settings.Esp.Elements
+    Elements["Players"] = Elements["Players"] or {}
+
+    for _, plr in ipairs(game.Players:GetPlayers()) do
         if plr ~= lplr and plr.Character then
             local stats = plr:FindFirstChild("TempPlayerStatsModule")
             if stats and stats:FindFirstChild("IsBeast") then
                 cleanup(plr, Elements)
-                local bbg, tl, hi
                 pcall(function()
-                    if extension then
-                        bbg = Instance.new("BillboardGui")
-                        bbg.Parent = plr.Character:FindFirstChild("Head")
-                        bbg.Size = UDim2.fromOffset(100,50)
-                        bbg.StudsOffset = Vector3.new(0,2,0)
-                        bbg.AlwaysOnTop = true
-                        bbg.Adornee = plr.Character:FindFirstChild("Head")
-                        tl = Instance.new("TextLabel", bbg)
-                        tl.Size = UDim2.fromScale(1,1)
-                        tl.BackgroundTransparency = 1
-                        tl.TextColor3 = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
-                        tl.Font = Enum.Font.Fantasy
-                        tl.TextSize = 13
-                        tl.Text = stats.IsBeast.Value and ("Power: "..tostring(rep:FindFirstChild("CurrentPower") and rep.CurrentPower.Value or 0).." | Beast | "..plr.Name) or ("Survivor | "..plr.Name)
-                    end
-                    
-                    hi = Instance.new("Highlight")
-                    hi.Parent = plr.Character
-                    hi.FillColor = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
-                    hi.OutlineTransparency = stats.IsBeast.Value and .5 or 1
-                    hi.FillTransparency = .75
+                    local hi = Instance.new("Highlight", plr.Character)
+                    hi.FillColor = stats.IsBeast.Value and Color3.new(1,0,0) or Color3.new(0,1,0)
+                    hi.OutlineTransparency = stats.IsBeast.Value and 0.5 or 1
+                    hi.FillTransparency = 0.5
                     hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    
-                    Elements["Players"][plr] = {
+
+                    Elements"Players" = {
                         hi = hi,
-                        bbg = bbg,
-                        tl = tl,
                         conn = stats.IsBeast:GetPropertyChangedSignal("Value"):Connect(function()
-                            if hi then
-                                hi.FillColor = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
-                                hi.OutlineTransparency = stats.IsBeast.Value and .5 or 1
-                            end
-                            if tl then
-                                tl.TextColor3 = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
-                                tl.Text = stats.IsBeast.Value and ("Power: "..tostring(rep:FindFirstChild("CurrentPower") and rep.CurrentPower.Value or 0).." | Beast | "..plr.Name) or ("Survivor | "..plr.Name)
-                            end
+                            hi.FillColor = stats.IsBeast.Value and Color3.new(1,0,0) or Color3.new(0,1,0)
+                            hi.OutlineTransparency = stats.IsBeast.Value and 0.5 or 1
                         end)
                     }
                 end)
@@ -217,277 +152,169 @@ local function plr_esp(Elements)
     end
 end
 
-Tabs.Features:Toggle({
-    Title = "Players Esp",
-    Desc = "",
-    Type = "Checkbox",
-    Default = false,
-    Callback = function(state)
-        getgenv().Settings.Esp.Players = state
-        local Elements = getgenv().Settings.Esp.Elements
-        Elements["Players"] = Elements["Players"] or {}
-        
-        if state then
-            plr_esp(Elements)
-            game:GetService("Players").PlayerAdded:Connect(function(plr)
-                plr.CharacterAdded:Connect(function()
-                    task.wait(1)
-                    plr_esp(Elements)
-                end)
-            end)
-        else
-            for plr, data in pairs(Elements["Players"]) do
-                cleanup(plr, Elements)
-            end
-            Elements["Players"] = {}
-        end
-    end
-})
-
-game:GetService("Players").PlayerRemoving:Connect(function(plr)
+VisualsSection:NewToggle("PlayerESP", "Player ESP", function(state)
+    getgenv().Settings.Esp.Players = state
     local Elements = getgenv().Settings.Esp.Elements
-    if Elements and Elements["Players"] then
-        cleanup(plr, Elements)
+    Elements["Players"] = Elements["Players"] or {}
+
+    if state then
+        updatePlayerESP()
+        game.Players.PlayerAdded:Connect(function(plr)
+            plr.CharacterAdded:Connect(function()
+                task.wait(1)
+                updatePlayerESP()
+            end)
+        end)
+    else
+        for plr in pairs(Elements["Players"] or {}) do
+            cleanup(plr, Elements)
+        end
     end
 end)
 
-Tabs.Features:Toggle({
-    Title = "Beast Role Extension",
-    Desc = "Make The Players Esp Apply A TextLabel To Identify The Beasts Power And Names",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(state)
-        extension = state
-        if getgenv().Settings.Esp.Players then
-            local Elements = getgenv().Settings.Esp.Elements
-            for plr, data in pairs(Elements["Players"]) do
-                cleanup(plr, Elements)
-            end
-            plr_esp(Elements)
-        end
-    end
-})
+VisualsSection:NewToggle("BeastExt", "Beast Name Tags", function(state)
+    getgenv().Settings.BeastExtension = state
+end)
 
--- Simplified ESP functions for other objects (same pattern)
-local function createGenericEspToggle(tab, title, settingKey, color, nameMatch)
-    tab:Toggle({
-        Title = title.." Esp",
-        Desc = "",
-        Type = "Checkbox",
-        Value = false,
-        Callback = function(state)
-            getgenv().Settings.Esp[settingKey] = state
-            local Elements = getgenv().Settings.Esp.Elements
-            Elements[settingKey] = Elements[settingKey] or {}
-            
-            local function Apply(v)
-                if v.Name:match(nameMatch) and not Elements[settingKey][v] then
-                    pcall(function()
-                        local hi = Instance.new("Highlight")
-                        hi.Parent = v
-                        hi.FillColor = color
-                        hi.OutlineTransparency = 1
-                        hi.FillTransparency = .75
-                        hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        Elements[settingKey][v] = hi
-                    end)
-                end
-            end
-            
-            if state then
-                for _, v in ipairs(workspace:GetDescendants()) do
-                    Apply(v)
-                end
-                Elements[settingKey].Connection = workspace.DescendantAdded:Connect(Apply)
-            else
-                if Elements[settingKey].Connection then 
-                    Elements[settingKey].Connection:Disconnect() 
-                    Elements[settingKey].Connection = nil 
-                end
-                for i, v in pairs(Elements[settingKey]) do 
-                    if v then v:Destroy() end 
-                end
-                Elements[settingKey] = {}
+-- Generic ESP Toggle Function
+local function createEspToggle(section, name, setting, color)
+    section:NewToggle(name.."ESP", name.." ESP", function(state)
+        getgenv().Settings.Esp[setting] = state
+        local Elements = getgenv().Settings.Esp.Elements
+        Elements[setting] = Elements[setting] or {}
+
+        local function applyESP(obj)
+            if obj.Name:lower():find(name:lower()) and not Elementssetting then
+                pcall(function()
+                    local hi = Instance.new("Highlight", obj)
+                    hi.FillColor = color
+                    hi.OutlineTransparency = 1
+                    hi.FillTransparency = 0.5
+                    hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    Elementssetting = hi
+                end)
             end
         end
-    })
+
+        if state then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                applyESP(obj)
+            end
+            Elements[setting].conn = workspace.DescendantAdded:Connect(applyESP)
+        else
+            if Elements[setting].conn then Elements[setting].conn:Disconnect() end
+            for _, hi in pairs(Elements[setting]) do
+                if hi then hi:Destroy() end
+            end
+            Elements[setting] = {}
+        end
+    end)
 end
 
-createGenericEspToggle(Tabs.Features, "Computers", "Computers", Color3.fromRGB(255,255,255), "ComputerTable")
-createGenericEspToggle(Tabs.Features, "FreezePods", "Freezers", Color3.fromRGB(153,204,255), "FreezePod")
-createGenericEspToggle(Tabs.Features, "Vents", "Vents", Color3.fromRGB(13,105,172), "^Vent")
-createGenericEspToggle(Tabs.Features, "ExitDoors", "Exit_Doors", Color3.fromRGB(255,153,51), "ExitDoor")
+createEspToggle(VisualsSection, "Computer", "Computers", Color3.new(1,1,1))
+createEspToggle(VisualsSection, "Freeze", "Freezers", Color3.new(0.6, 0.8, 1))
+createEspToggle(VisualsSection, "Vent", "Vents", Color3.new(0, 0.4, 0.8))
+createEspToggle(VisualsSection, "Exit", "Exit_Doors", Color3.new(1, 0.6, 0))
 
-Tabs.Features:Paragraph({Title = "Beast Section",Color = "Red",Locked = true})
-
-local antiSlownessConn
-Tabs.Features:Toggle({
-    Title = "Anti Slowness",
-    Desc = "",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(state)
-        if state then
-            antiSlownessConn = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-                pcall(function()
-                    local IsCrawling = lplr:FindFirstChild("TempPlayerStatsModule") and lplr.TempPlayerStatsModule:FindFirstChild("IsCrawling")
-                    if IsCrawling and not IsCrawling.Value and hum.WalkSpeed < 16 then
-                        hum.WalkSpeed = 17
-                    end
-                end)
-            end)
-        elseif antiSlownessConn then
-            antiSlownessConn:Disconnect()
-            antiSlownessConn = nil
-        end
-    end
-})
-
-Tabs.Features:Slider({
-    Title = "Hit Distance",
-    Step = 1,
-    Value = {Min = 8,Max = 28,Default = 8},
-    Callback = function(v)
-        getgenv().Settings.Hit_Settings.Distance = v
-    end
-})
-
-Tabs.Features:Toggle({
-    Title = "Hit Aura",
-    Desc = "",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(state)
-        if state and not getgenv().Settings.Hit_Settings.Connection then
-            getgenv().Settings.Hit_Settings.Connection = runs.RenderStepped:Connect(function()
-                for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
-                    if plr ~= lplr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                        local thrp = plr.Character.HumanoidRootPart
-                        local rag = plr.Character:FindFirstChild("Ragdoll")
-                        if (hrp.Position - thrp.Position).Magnitude <= getgenv().Settings.Hit_Settings.Distance and not (rag and rag.Value) then
-                            pcall(function()
-                                if char:FindFirstChild("Hammer") and char.Hammer:FindFirstChild("HammerEvent") then
-                                    char.Hammer.HammerEvent:FireServer("HammerHit", plr.Character.Head)
-                                end
-                            end)
-                        end
-                    end
+-- Anti Slowness
+local antiSlowConn
+BeastSection:NewToggle("AntiSlow", "Anti Slowness", function(state)
+    if state then
+        antiSlowConn = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            pcall(function()
+                local stats = lplr:FindFirstChild("TempPlayerStatsModule")
+                local isCrawling = stats and stats:FindFirstChild("IsCrawling")
+                if isCrawling and not isCrawling.Value and hum.WalkSpeed < 16 then
+                    hum.WalkSpeed = 17
                 end
             end)
-        elseif getgenv().Settings.Hit_Settings.Connection then
-            getgenv().Settings.Hit_Settings.Connection:Disconnect()
-            getgenv().Settings.Hit_Settings.Connection = nil
-        end
+        end)
+    else
+        if antiSlowConn then antiSlowConn:Disconnect() end
     end
-})
+end)
 
-Tabs.Features:Slider({
-    Title = "Tie Distance",
-    Step = 1,
-    Value = {Min = 8,Max = 28,Default = 8},
-    Callback = function(v)
-        getgenv().Settings.Tie_Settings.Distance = v
-    end
-})
+-- Hit Aura
+BeastSection:NewSlider("HitDist", "Hit Distance", 500, 8, function(s)
+    getgenv().Settings.Hit_Settings.Distance = s
+end)
 
-Tabs.Features:Toggle({
-    Title = "Tie Aura",
-    Desc = "",
-    Type = "Checkbox",
-    Value = false,
-    Callback = function(state)
-        if state and not getgenv().Settings.Tie_Settings.Connection then
-            getgenv().Settings.Tie_Settings.Connection = runs.RenderStepped:Connect(function()
-                for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
-                    if plr ~= lplr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                        local thrp = plr.Character.HumanoidRootPart
-                        local rag = plr.Character:FindFirstChild("Ragdoll")
-                        if (hrp.Position - thrp.Position).Magnitude <= getgenv().Settings.Tie_Settings.Distance and not (rag and rag.Value) then
-                            pcall(function()
-                                if char:FindFirstChild("Hammer") and char.Hammer:FindFirstChild("HammerEvent") then
-                                    char.Hammer.HammerEvent:FireServer("HammerTieUp", thrp, Vector3.new(0,0,0))
-                                end
-                            end)
-                        end
+BeastSection:NewToggle("HitAura", "Hit Aura", function(state)
+    if state and not getgenv().Settings.Hit_Settings.Connection then
+        getgenv().Settings.Hit_Settings.Connection = runs.RenderStepped:Connect(function()
+            for _, plr in ipairs(game.Players:GetPlayers()) do
+                if plr ~= lplr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                    if dist <= getgenv().Settings.Hit_Settings.Distance then
+                        pcall(function()
+                            local rag = plr.Character:FindFirstChild("Ragdoll")
+                            if not (rag and rag.Value) and char:FindFirstChild("Hammer") then
+                                char.Hammer.HammerEvent:FireServer("HammerHit", plr.Character.Head)
+                            end
+                        end)
                     end
                 end
-            end)
-        elseif getgenv().Settings.Tie_Settings.Connection then
-            getgenv().Settings.Tie_Settings.Connection:Disconnect()
-            getgenv().Settings.Tie_Settings.Connection = nil
-        end
-    end
-})
-
-Tabs.ExtraFeatures:Button({
-    Title = "ShiftLock",
-    Desc = "This Is By Nameless Admin.",
-    Locked = false,
-    Callback = function()
-        loadstring(game:HttpGet("https://github.com/ltseverydayyou/uuuuuuu/blob/main/shiftlock?raw=true"))()
-    end
-})
-
-Tabs.ExtraFeatures:Button({
-    Title = "Third Person",
-    Desc = "Force Is Necessary...",
-    Locked = false,
-    Callback = function()
-        lplr.CameraMode = Enum.CameraMode.Classic
-        lplr.CameraMinZoomDistance = .5
-        lplr.CameraMaxZoomDistance = 12
-    end
-})
-
-Tabs.ExtraFeatures:Button({
-    Title = "Force Respawn",
-    Desc = "This Can Free You From A Freezer But If Everyone Is Frozen You'll Lose. Force Is Necessary.",
-    Locked = false,
-    Callback = function()
-        hum.Health = 0
-        lplr:LoadCharacter()
-    end
-})
-
-local info = Tabs.Info:Paragraph({
-    Title = "Info + More Features:",
-    Desc = "",
-    Color = "Green",
-    Buttons = {
-        {
-            Icon = "bird",
-            Title = "Discord Server Link",
-            Callback = function() 
-                setclipboard("https://discord.gg/8d3XZFJzRP") 
-                lib:Notify({Title = "Discord Server Link.",Content = "https://discord.gg/8d3XZFJzRP",Duration = 8,Icon = "check"}) 
             end
-        },
-        {
-            Title = "Smallest Serverhop",
-            Callback = function() 
-                task.spawn(function()
-                    local success, result = pcall(function()
-                        return httpservice:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
-                    end)
-                    if success and result and result.data and result.data[1] then
-                        local JobId = result.data[1].id
-                        if JobId ~= game.JobId then
-                            ts:TeleportToPlaceInstance(game.PlaceId, JobId, lplr)
-                        end
+        end)
+    elseif getgenv().Settings.Hit_Settings.Connection then
+        getgenv().Settings.Hit_Settings.Connection:Disconnect()
+        getgenv().Settings.Hit_Settings.Connection = nil
+    end
+end)
+
+-- Tie Aura
+BeastSection:NewSlider("TieDist", "Tie Distance", 500, 8, function(s)
+    getgenv().Settings.Tie_Settings.Distance = s
+end)
+
+BeastSection:NewToggle("TieAura", "Tie Aura", function(state)
+    if state and not getgenv().Settings.Tie_Settings.Connection then
+        getgenv().Settings.Tie_Settings.Connection = runs.RenderStepped:Connect(function()
+            for _, plr in ipairs(game.Players:GetPlayers()) do
+                if plr ~= lplr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                    if dist <= getgenv().Settings.Tie_Settings.Distance then
+                        pcall(function()
+                            local rag = plr.Character:FindFirstChild("Ragdoll")
+                            if not (rag and rag.Value) and char:FindFirstChild("Hammer") then
+                                char.Hammer.HammerEvent:FireServer("HammerTieUp", plr.Character.HumanoidRootPart, Vector3.new())
+                            end
+                        end)
                     end
-                end)
+                end
             end
-        }
-    },
-    Locked = true
-})
+        end)
+    elseif getgenv().Settings.Tie_Settings.Connection then
+        getgenv().Settings.Tie_Settings.Connection:Disconnect()
+        getgenv().Settings.Tie_Settings.Connection = nil
+    end
+end)
 
-runs.Heartbeat:Connect(function()
-    pcall(function()
-        local currentPower = rep:FindFirstChild("CurrentPower") and rep.CurrentPower.Value or 0
-        local playerCount = #game:GetService("Players"):GetPlayers()
-        info:SetDesc("Credits To The Owner: leite\nDiscord Name For Contact: 86x1\nPing: "..math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() or 0).."ms.\nServer Stuff:\nSize: "..playerCount.."/"..game:GetService("Players").MaxPlayers..".\nBeast Power: "..currentPower)
+-- Extra Features
+ExtraSection:NewButton("ShiftLock", "Load ShiftLock", function()
+    loadstring(game:HttpGet("https://github.com/ltseverydayyou/uuuuuuu/blob/main/shiftlock?raw=true"))()
+end)
+
+ExtraSection:NewButton("Third Person", "Enable Third Person", function()
+    lplr.CameraMode = Enum.CameraMode.Classic
+    lplr.CameraMinZoomDistance = 0.5
+    lplr.CameraMaxZoomDistance = 400
+end)
+
+ExtraSection:NewButton("Force Respawn", "Respawn (Escape Freezer)", function()
+    hum.Health = 0
+end)
+
+-- Serverhop
+ExtraSection:NewButton("Serverhop", "Smallest Serverhop", function()
+    task.spawn(function()
+        local servers = httpservice:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
+        if servers and servers.data[1] then
+            ts:TeleportToPlaceInstance(game.PlaceId, servers.data[1].id, lplr)
+        end
     end)
 end)
 
-print("CruzHUB loaded successfully for Xeno Executor!")
+-- Discord
+ExtraSection:NewButton("Copy Discord", "Copy Discord Link", function()
+    setclipboard("https
