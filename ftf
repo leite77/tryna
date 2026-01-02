@@ -1,11 +1,7 @@
+-- Xeno ve modern executorlar için yükleme bekletmesi
 repeat task.wait() until game:IsLoaded()
 
-local success, lib = pcall(function()
-    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-end)
-
-if not success then return end
-
+local lib = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 lib:Notify({Title = "CruzHUB Notification.",Content = "Loaded Successfully!",Duration = 3,Icon = "bird"})
 
 local rep,runs,uis,rs,httpservice,ts = game:GetService("ReplicatedStorage"),game:GetService("RunService"),game:GetService("UserInputService"),game:GetService("RunService"),game:GetService("HttpService"),game:GetService("TweenService")
@@ -52,12 +48,7 @@ local Tabs = {
     Info = Sections.Misc:Tab({Title = "Info",Icon = "users",Desc = "Credits And Discord Server And Information."})
 }
 
-Tabs.Features:Paragraph({Title = "Main Section",Color = "Orange",Locked = true})
-Tabs.Features:Dropdown({Title = "Bypass Method",Values = {"Metamethod","Event","Legitmate"},Value = "Metamethod",Callback = function(v)
-    getgenv().Settings.Method = v
-end,})
-
--- XENO ICIN GÜNCELLENMİŞ BYPASS KISMI
+-- [BYPASS METODU - XENO UYUMLU]
 local enabled = false
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
@@ -69,6 +60,11 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     end
     return oldNamecall(self, ...)
 end)
+
+Tabs.Features:Paragraph({Title = "Main Section",Color = "Orange",Locked = true})
+Tabs.Features:Dropdown({Title = "Bypass Method",Values = {"Metamethod","Event","Legitmate"},Value = "Metamethod",Callback = function(v)
+    getgenv().Settings.Method = v
+end,})
 
 Tabs.Features:Toggle({Title = "Anti-Failure",Desc = "Failure? That Never Existed.",Type = "Checkbox",Value = false,Callback = function(v)
     getgenv().Settings.Anti_Failure = v
@@ -86,5 +82,92 @@ Tabs.Features:Toggle({Title = "Anti-Failure",Desc = "Failure? That Never Existed
     end
 end,})
 
--- Geri kalan ESP ve Aura kısımları orijinal kodunla aynıdır
--- (Kodun geri kalanı çok uzun olduğu için orijinal ESP ve Aura mantığını koruy
+Tabs.Features:Paragraph({Title = "LocalPlayer Section",Color = "Orange",Locked = true})
+Tabs.Features:Slider({Title = "Crawling Speed",Step = 1,Value = {Min = 8,Max = 100,Default = tonumber(getgenv().Settings.Crawling)},Callback = function(v)
+    getgenv().Settings.Crawling = v
+    local IsCrawling = lplr and lplr:WaitForChild("TempPlayerStatsModule") and lplr.TempPlayerStatsModule:WaitForChild("IsCrawling") and lplr.TempPlayerStatsModule.IsCrawling
+    IsCrawling:GetPropertyChangedSignal("Value"):Connect(function()
+        if IsCrawling.Value then
+            hum.WalkSpeed = getgenv().Settings.Crawling
+        end
+    end)
+end,})
+
+-- [ESP SİSTEMİ - TÜM ÖZELLİKLER KORUNDU]
+Tabs.Features:Paragraph({Title = "Visuals Section",Color = "Orange",Locked = true})
+local extension = false
+local function cleanup(plr,Elements)
+    local data = Elements["Players"][plr]
+    if data then
+        if data.conn then data.conn:Disconnect() end
+        if data.hi then data.hi:Destroy() end
+        if data.bbg then data.bbg:Destroy() end
+        Elements["Players"][plr] = nil
+    end
+end
+
+local function plr_esp(Elements)
+    if not getgenv().Settings.Esp.Players then return end
+    for _,plr in ipairs(game:GetService("Players"):GetPlayers()) do
+        if plr ~= game:GetService("Players").LocalPlayer and plr.Character then
+            local stats = plr:FindFirstChild("TempPlayerStatsModule") or plr:WaitForChild("TempPlayerStatsModule")
+            if not stats or not stats:FindFirstChild("IsBeast") then continue end
+            cleanup(plr, Elements)
+            local bbg, tl
+            if extension then
+                bbg = Instance.new("BillboardGui",plr.Character:WaitForChild("Head"))
+                bbg.Size = UDim2.fromOffset(100,50)
+                bbg.StudsOffset = Vector3.new(0,2,0)
+                bbg.AlwaysOnTop = true
+                bbg.Adornee = plr.Character:WaitForChild("Head")
+                tl = Instance.new("TextLabel",bbg)
+                tl.Size = UDim2.fromScale(1,1)
+                tl.BackgroundTransparency = 1
+                tl.TextColor3 = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
+                tl.Font = Enum.Font.Fantasy
+                tl.TextSize = 13
+                tl.Text = stats.IsBeast.Value and ("Power: "..rep.CurrentPower.Value.." | Beast | "..plr.Name) or ("Survivor | "..plr.Name)
+            end
+            local hi = Instance.new("Highlight",plr.Character)
+            hi.FillColor = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
+            hi.OutlineTransparency = stats.IsBeast.Value and .5 or 1
+            hi.FillTransparency = .75
+            hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            Elements["Players"][plr] = {
+                hi = hi,
+                bbg = bbg,
+                tl = tl,
+                conn = stats.IsBeast:GetPropertyChangedSignal("Value"):Connect(function()
+                    if hi then
+                        hi.FillColor = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
+                        hi.OutlineTransparency = stats.IsBeast.Value and .5 or 1
+                    end
+                    if tl then
+                        tl.TextColor3 = stats.IsBeast.Value and Color3.new(.9,0,0) or Color3.fromRGB(153,255,153)
+                        tl.Text = stats.IsBeast.Value and ("Power: "..rep.CurrentPower.Value.." | Beast | "..plr.Name) or ("Survivor | "..plr.Name)
+                    end
+                end)
+            }
+        end
+    end
+end
+
+Tabs.Features:Toggle({Title = "Players Esp",Desc = "",Type = "Checkbox",Default = false,Callback = function(state)
+    getgenv().Settings.Esp.Players = state
+    local Elements = getgenv().Settings.Esp.Elements
+    Elements["Players"] = Elements["Players"] or {}
+    if state then
+        plr_esp(Elements)
+        game:GetService("Players").PlayerAdded:Connect(function(plr)
+            plr.CharacterAdded:Connect(function()
+                repeat task.wait() until plr.Character:FindFirstChild("Humanoid")
+                plr_esp(Elements)
+            end)
+        end)
+    else
+        for plr,data in pairs(Elements["Players"]) do cleanup(plr,Elements) end
+        Elements["Players"] = {}
+    end
+end,})
+
+Tabs.Features
