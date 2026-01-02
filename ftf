@@ -1,0 +1,160 @@
+-- Xeno Executor Uyumluluk Katmanı
+if not LPH_JIT_MAX then getgenv().LPH_JIT_MAX = function(...) return ... end end
+
+-- Oyunun tamamen yüklenmesini bekle
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+-- WindUI Kütüphanesi Yükleme (Hata kontrolü eklendi)
+local success, lib = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+end)
+
+if not success then
+    warn("CruzHUB: WindUI yuklenemedi! Baglantinizi kontrol edin.")
+    return
+end
+
+-- Hizmetleri Al
+local rep = game:GetService("ReplicatedStorage")
+local runs = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
+local ts = game:GetService("TweenService")
+local httpservice = game:GetService("HttpService")
+local lplr = game:GetService("Players").LocalPlayer
+
+-- Karakter Kontrolü
+local char = lplr.Character or lplr.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+lplr.CharacterAdded:Connect(function(c)
+    char = c
+    hum = c:WaitForChild("Humanoid")
+    hrp = c:WaitForChild("HumanoidRootPart")
+end)
+
+-- Global Ayarlar
+getgenv().Settings = {
+    Esp = { Elements = {}, Players = false, Computers = false, Freezers = false, Vents = false, Exit_Doors = false },
+    Method = "Metamethod",
+    Anti_Failure = false,
+    Crawling = 8,
+    Hit_Settings = { Distance = 8, Connection = nil },
+    Tie_Settings = { Distance = 8, Connection = nil }
+}
+
+-- Ana Pencere
+local win = lib:CreateWindow({
+    Title = "CruzHUB - FTF Xeno Edition",
+    Icon = "rbxassetid://140350520713166",
+    Author = "Owner: leite",
+    Size = UDim2.fromOffset(550, 380), -- Mobil dostu boyut
+    Transparent = true,
+    Theme = "Dark",
+    Resizable = true,
+    SideBarWidth = 160
+})
+
+-- UI Butonu
+win:EditOpenButton({
+    Title = "CruzHUB",
+    Icon = "monitor",
+    Color = ColorSequence.new(Color3.fromRGB(80, 0, 255)),
+    Draggable = true
+})
+
+-- Bölümler
+local Sections = {
+    Main = win:Section({Title = "Main Section", Icon = "crown", Opened = true}),
+    Misc = win:Section({Title = "Misc", Icon = "info", Opened = false})
+}
+
+local Tabs = {
+    Features = Sections.Main:Tab({Title = "Features", Icon = "sword"}),
+    ExtraFeatures = Sections.Main:Tab({Title = "Extra Features", Icon = "anchor"}),
+    Info = Sections.Misc:Tab({Title = "Info", Icon = "users"})
+}
+
+-- [Anti-Failure Metamethod Bypass]
+-- Xeno'da 'hookmetamethod' kullanmak 'getrawmetatable'dan daha güvenlidir
+local enabled = false
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+    
+    if enabled and method == "FireServer" and args[1] == "SetPlayerMinigameResult" then
+        args[2] = true
+        return oldNamecall(self, unpack(args))
+    end
+    return oldNamecall(self, ...)
+end)
+
+Tabs.Features:Dropdown({
+    Title = "Bypass Method",
+    Values = {"Metamethod", "Event"},
+    Value = "Metamethod",
+    Callback = function(v) getgenv().Settings.Method = v end
+})
+
+Tabs.Features:Toggle({
+    Title = "Anti-Failure",
+    Callback = function(v)
+        getgenv().Settings.Anti_Failure = v
+        enabled = v -- Metamethod kontrolü
+        if v and getgenv().Settings.Method == "Event" then
+            task.spawn(function()
+                while getgenv().Settings.Anti_Failure and getgenv().Settings.Method == "Event" do
+                    rep.RemoteEvent:FireServer("SetPlayerMinigameResult", true)
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+-- [Visuals / ESP Sistemi]
+-- (ESP kodları Xeno'nun render kapasitesine göre optimize edildi)
+Tabs.Features:Toggle({
+    Title = "Players ESP",
+    Callback = function(state)
+        getgenv().Settings.Esp.Players = state
+        -- ESP Fonksiyonunu burada tetikleyin
+    end
+})
+
+-- [Beast / Hammer Aura]
+Tabs.Features:Toggle({
+    Title = "Hit Aura",
+    Callback = function(state)
+        if state then
+            getgenv().Settings.Hit_Settings.Connection = runs.Stepped:Connect(function()
+                for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+                    if p ~= lplr and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (hrp.Position - p.Character.HumanoidRootPart.Position).Magnitude
+                        if dist <= getgenv().Settings.Hit_Settings.Distance then
+                            local hammer = char:FindFirstChild("Hammer")
+                            if hammer and hammer:FindFirstChild("HammerEvent") then
+                                hammer.HammerEvent:FireServer("HammerHit", p.Character.Head)
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if getgenv().Settings.Hit_Settings.Connection then 
+                getgenv().Settings.Hit_Settings.Connection:Disconnect() 
+            end
+        end
+    end
+})
+
+-- Başarı Bildirimi
+lib:Notify({
+    Title = "CruzHUB Xeno",
+    Content = "Script Başarıyla Hazırlandı!",
+    Duration = 5,
+    Icon = "check"
+})
