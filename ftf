@@ -314,7 +314,3 @@ ExtraSection:NewButton("Serverhop", "Smallest Serverhop", function()
         end
     end)
 end)
-
--- Discord
-ExtraSection:NewButton("Copy Discord", "Copy Discord Link", function()
-    setclipboard("https
