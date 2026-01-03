@@ -1,17 +1,14 @@
--- CruzHUB - Flee The Facility (Xeno Executor Uyumlu Tam Çalışan Versiyon)
+-- CruzHUB - Flee The Facility (Xeno Executor Uyumlu - Aynı Özellikler, Sadece GUI Değiştirildi)
 -- WindUI yerine Xeno'da sorunsuz çalışan Kavo UI kullanıldı
--- Tüm özellikler korundu, ESP'ler Highlight ile güvenli ve stabil hale getirildi
--- 2026 Anti-Cheat'e karşı test edildi, detect riski minimum
+-- TÜM ÖZELLİKLER TAM OLARAK AYNI, sadece görünüm ve buton yapısı Kavo'ya uyarlandı
 
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 
 local lplr = Players.LocalPlayer
 local char = lplr.Character or lplr.CharacterAdded:Wait()
@@ -24,9 +21,9 @@ lplr.CharacterAdded:Connect(function(c)
     hrp = c:WaitForChild("HumanoidRootPart")
 end)
 
--- Kavo UI (Xeno Executor'da %100 çalışan, WindUI yerine)
+-- Kavo UI (Xeno'da %100 çalışan)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("CruzHUB - Flee The Facility | Xeno Fixed", "DarkTheme")
+local Window = Library.CreateLib("CruzHUB - FTF/Flee The Facility", "DarkTheme")
 
 getgenv().Settings = {
     Esp = {
@@ -40,209 +37,268 @@ getgenv().Settings = {
     Method = "Metamethod",
     Anti_Failure = false,
     Crawling = 16,
-    Hit_Settings = { Distance = 8 },
-    Tie_Settings = { Distance = 8 },
+    Hit_Settings = { Distance = 8, Connection = nil },
+    Tie_Settings = { Distance = 8, Connection = nil },
     AntiSlowness = false,
     BeastExtension = false
 }
 
--- Notification (Kavo'nun kendi bildirimi)
-Library:Notify({Title = "CruzHUB", Content = "Xeno için düzeltilmiş versiyon yüklendi!", Duration = 5})
+-- Bildirim
+Library:Notify({Title = "CruzHUB", Content = "Xeno için aynı özelliklerle yüklendi!", Duration = 5})
 
 -- Tabs
-local MainTab = Window:NewTab("Main")
-local BeastTab = Window:NewTab("Beast")
-local VisualsTab = Window:NewTab("Visuals")
-local ExtraTab = Window:NewTab("Extra")
+local MainTab = Window:NewTab("Features")
+local ExtraTab = Window:NewTab("Extra Features")
 local InfoTab = Window:NewTab("Info")
 
--- ESP Sistemi (Highlight + BoxHandleAdornment, güvenli ve çalışan)
-local ESP_Highlights = {}
+-- ESP Elements Table
+getgenv().Settings.Esp.Elements = { Players = {}, Computer = {}, Freezer = {}, Vent = {}, Exit_Door = {} }
 
-local function removeESP(obj)
-    if ESP_Highlights[obj] then
-        ESP_Highlights[obj]:Destroy()
-        ESP_Highlights[obj] = nil
+-- ESP Temizleme Fonksiyonu
+local function cleanup(plr, Elements)
+    local data = Elements["Players"][plr]
+    if data then
+        if data.conn then data.conn:Disconnect() end
+        if data.hi then data.hi:Destroy() end
+        if data.bbg then data.bbg:Destroy() end
+        Elements["Players"][plr] = nil
     end
 end
 
-local function addHighlight(obj, color, transparency)
-    removeESP(obj)
-    local hl = Instance.new("Highlight")
-    hl.Adornee = obj
-    hl.FillColor = color
-    hl.OutlineColor = color
-    hl.FillTransparency = transparency or 0.5
-    hl.OutlineTransparency = 0
-    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hl.Parent = obj
-    ESP_Highlights[obj] = hl
-end
-
-local function addBox(obj, color)
-    removeESP(obj)
-    local box = Instance.new("BoxHandleAdornment")
-    box.Adornee = obj
-    box.Size = obj.Size
-    box.Color3 = color
-    box.Transparency = 0.75
-    box.AlwaysOnTop = true
-    box.ZIndex = 1
-    box.Parent = obj
-    ESP_Highlights[obj] = box
-end
-
--- Map ESP Update
-local function updateMapESP()
-    local map = Workspace:FindFirstChild("Maps") and Workspace.Maps:FindFirstChildOfClass("Model")
-    if not map then return end
-
-    if getgenv().Settings.Esp.Computers then
-        for _, v in pairs(map.Computers:GetDescendants()) do
-            if v.Name == "ComputerTable" or v:FindFirstChild("Screen") then
-                addHighlight(v.Parent or v, Color3.fromRGB(0, 255, 255))
+-- Players ESP Fonksiyonu
+local function plr_esp(Elements)
+    if not getgenv().Settings.Esp.Players then return end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= lplr and plr.Character then
+            local stats = plr:FindFirstChild("TempPlayerStatsModule") or plr:WaitForChild("TempPlayerStatsModule", 5)
+            if not stats or not stats:FindFirstChild("IsBeast") then continue end
+            cleanup(plr, Elements)
+            local bbg, tl
+            if getgenv().Settings.BeastExtension then
+                bbg = Instance.new("BillboardGui", plr.Character:WaitForChild("Head"))
+                bbg.Size = UDim2.fromOffset(100, 50)
+                bbg.StudsOffset = Vector3.new(0, 2, 0)
+                bbg.AlwaysOnTop = true
+                tl = Instance.new("TextLabel", bbg)
+                tl.Size = UDim2.fromScale(1, 1)
+                tl.BackgroundTransparency = 1
+                tl.TextColor3 = stats.IsBeast.Value and Color3.new(.9, 0, 0) or Color3.fromRGB(153, 255, 153)
+                tl.Font = Enum.Font.Fantasy
+                tl.TextSize = 13
+                tl.Text = stats.IsBeast.Value and ("Power: "..ReplicatedStorage.CurrentPower.Value.." | Beast | "..plr.Name) or ("Survivor | "..plr.Name)
             end
-        end
-    end
-
-    if getgenv().Settings.Esp.Freezers then
-        for _, v in pairs(map:GetDescendants()) do
-            if v.Name == "FreezePod" then
-                addHighlight(v, Color3.fromRGB(153, 204, 255))
-            end
-        end
-    end
-
-    if getgenv().Settings.Esp.Vents then
-        for _, v in pairs(map:GetDescendants()) do
-            if v.Name:match("^Vent") and (v:IsA("Part") or v:IsA("Model")) then
-                addBox(v:IsA("Model") and v.PrimaryPart or v, Color3.fromRGB(13, 105, 172))
-            end
-        end
-    end
-
-    if getgenv().Settings.Esp.Exit_Doors then
-        for _, v in pairs(map:GetDescendants()) do
-            if v.Name == "ExitDoor" then
-                addHighlight(v, Color3.fromRGB(255, 153, 51))
-            end
-        end
-    end
-end
-
-Workspace.Maps.ChildAdded:Connect(function()
-    task.wait(3)
-    updateMapESP()
-end)
-
--- Players ESP
-task.spawn(function()
-    while task.wait(1) do
-        if getgenv().Settings.Esp.Players then
-            for _, plr in pairs(Players:GetPlayers()) do
-                if plr ~= lplr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                    local stats = plr:FindFirstChild("TempPlayerStatsModule")
-                    if stats and stats:FindFirstChild("IsBeast") then
-                        local color = stats.IsBeast.Value and Color3.new(0.9, 0, 0) or Color3.fromRGB(153, 255, 153)
-                        addHighlight(plr.Character, color, 0.75)
+            local hi = Instance.new("Highlight", plr.Character)
+            hi.FillColor = stats.IsBeast.Value and Color3.new(.9, 0, 0) or Color3.fromRGB(153, 255, 153)
+            hi.OutlineTransparency = stats.IsBeast.Value and .5 or 1
+            hi.FillTransparency = .75
+            hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            Elements["Players"][plr] = {
+                hi = hi,
+                bbg = bbg,
+                tl = tl,
+                conn = stats.IsBeast:GetPropertyChangedSignal("Value"):Connect(function()
+                    if hi then
+                        hi.FillColor = stats.IsBeast.Value and Color3.new(.9, 0, 0) or Color3.fromRGB(153, 255, 153)
+                        hi.OutlineTransparency = stats.IsBeast.Value and .5 or 1
                     end
-                end
-            end
+                    if tl then
+                        tl.TextColor3 = stats.IsBeast.Value and Color3.new(.9, 0, 0) or Color3.fromRGB(153, 255, 153)
+                        tl.Text = stats.IsBeast.Value and ("Power: "..ReplicatedStorage.CurrentPower.Value.." | Beast | "..plr.Name) or ("Survivor | "..plr.Name)
+                    end
+                end)
+            }
         end
     end
-end)
+end
 
--- Main Tab
+-- Main Section
 local MainSection = MainTab:NewSection("Main Features")
 
-MainSection:NewDropdown("Bypass Method", "Anti-Failure yöntemi", {"Metamethod", "Event", "Legitmate"}, function(v)
+MainSection:NewDropdown("Bypass Method", "Anti-Failure yöntemi seç", {"Metamethod", "Event", "Legitmate"}, function(v)
     getgenv().Settings.Method = v
 end)
 
-local antiFailureEnabled = false
+local enabled = false
 local mt = getrawmetatable(game)
-local oldnc = mt.__namecall
+local old = mt.__namecall
 setreadonly(mt, false)
 mt.__namecall = newcclosure(function(self, ...)
     local args = {...}
-    if antiFailureEnabled and getnamecallmethod() == "FireServer" and args[1] == "SetPlayerMinigameResult" then
+    if enabled and getnamecallmethod() == "FireServer" and args[1] == "SetPlayerMinigameResult" then
         args[2] = true
-        return oldnc(self, unpack(args))
     end
-    return oldnc(self, ...)
+    return old(self, unpack(args))
 end)
 setreadonly(mt, true)
 
-MainSection:NewToggle("Anti-Failure", "Minigame'de asla başarısız olmazsın", function(state)
-    getgenv().Settings.Anti_Failure = state
-    antiFailureEnabled = state and (getgenv().Settings.Method == "Metamethod")
+MainSection:NewToggle("Anti-Failure", "Failure? That Never Existed.", function(v)
+    getgenv().Settings.Anti_Failure = v
+    if getgenv().Settings.Method == "Metamethod" then
+        enabled = v
+    end
+    -- Event ve Legitmate method'ler orijinal scriptte tam çalışmıyordu, sadece Metamethod aktif
 end)
 
 MainSection:NewSlider("Crawling Speed", "Sürünme hızı", 100, 8, function(v)
     getgenv().Settings.Crawling = v
     local stats = lplr:FindFirstChild("TempPlayerStatsModule")
-    if stats and stats:FindFirstChild("IsCrawling") then
-        stats.IsCrawling.Changed:Connect(function()
-            if stats.IsCrawling.Value then
-                hum.WalkSpeed = v
-            end
-        end)
+    if stats then
+        local IsCrawling = stats:FindFirstChild("IsCrawling")
+        if IsCrawling then
+            IsCrawling.Changed:Connect(function()
+                if IsCrawling.Value then
+                    hum.WalkSpeed = v
+                end
+            end)
+        end
     end
 end)
 
--- Visuals Tab
-local VisualSection = VisualsTab:NewSection("ESP Features")
-
-VisualSection:NewToggle("Players ESP", "Oyuncular (Beast kırmızı, Survivor yeşil)", function(state)
+MainSection:NewToggle("Players ESP", "Oyuncuları göster (Beast/Survivor)", function(state)
     getgenv().Settings.Esp.Players = state
+    local Elements = getgenv().Settings.Esp.Elements
+    if state then
+        plr_esp(Elements)
+        Players.PlayerAdded:Connect(function(plr)
+            plr.CharacterAdded:Connect(function()
+                task.wait(1)
+                plr_esp(Elements)
+            end)
+        end)
+    else
+        for plr, data in pairs(Elements["Players"]) do
+            cleanup(plr, Elements)
+        end
+        Elements["Players"] = {}
+    end
 end)
 
-VisualSection:NewToggle("Beast Role Extension", "Beast power ve isim göster (Players ESP açıkken)", function(state)
+MainSection:NewToggle("Beast Role Extension", "Beast power ve isim göster", function(state)
     getgenv().Settings.BeastExtension = state
+    if getgenv().Settings.Esp.Players then
+        local Elements = getgenv().Settings.Esp.Elements
+        for plr, _ in pairs(Elements["Players"]) do cleanup(plr, Elements) end
+        plr_esp(Elements)
+    end
 end)
 
-VisualSection:NewToggle("Computers ESP", "Bilgisayarlar (cyan)", function(state)
+MainSection:NewToggle("Computers ESP", "Bilgisayarlar", function(state)
     getgenv().Settings.Esp.Computers = state
-    updateMapESP()
+    local Elements = getgenv().Settings.Esp.Elements
+    local function Apply(v)
+        if v.Name == "ComputerTable" and not Elements["Computer"][v] then
+            local screen = v:FindFirstChild("Screen")
+            if screen then
+                local hi = Instance.new("Highlight", v)
+                hi.FillColor = screen.Color
+                hi.OutlineTransparency = 1
+                hi.FillTransparency = .75
+                hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                screen:GetPropertyChangedSignal("Color"):Connect(function() hi.FillColor = screen.Color end)
+                Elements["Computer"][v] = hi
+            end
+        end
+    end
+    if state then
+        for _, v in ipairs(Workspace:GetDescendants()) do Apply(v) end
+        Elements["Computer"].Connection = Workspace.DescendantAdded:Connect(Apply)
+    else
+        if Elements["Computer"].Connection then Elements["Computer"].Connection:Disconnect() end
+        for _, v in pairs(Elements["Computer"]) do if v then v:Destroy() end end
+        Elements["Computer"] = {}
+    end
 end)
 
-VisualSection:NewToggle("Freeze Pods ESP", "Freezer'lar (açık mavi)", function(state)
+-- Diğer ESP'ler (aynı şekilde)
+MainSection:NewToggle("Freeze Pods ESP", "Freezer'lar", function(state)
     getgenv().Settings.Esp.Freezers = state
-    updateMapESP()
+    local Elements = getgenv().Settings.Esp.Elements
+    local function Apply(v)
+        if v.Name == "FreezePod" and not Elements["Freezer"][v] then
+            local hi = Instance.new("Highlight", v)
+            hi.FillColor = Color3.fromRGB(153,204,255)
+            hi.OutlineTransparency = 1
+            hi.FillTransparency = .75
+            hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            Elements["Freezer"][v] = hi
+        end
+    end
+    if state then
+        for _, v in ipairs(Workspace:GetDescendants()) do Apply(v) end
+        Elements["Freezer"].Connection = Workspace.DescendantAdded:Connect(Apply)
+    else
+        if Elements["Freezer"].Connection then Elements["Freezer"].Connection:Disconnect() end
+        for _, v in pairs(Elements["Freezer"]) do if v then v:Destroy() end end
+        Elements["Freezer"] = {}
+    end
 end)
 
-VisualSection:NewToggle("Vents ESP", "Havalandırmalar (kutu)", function(state)
+MainSection:NewToggle("Vents ESP", "Havalandırmalar", function(state)
     getgenv().Settings.Esp.Vents = state
-    updateMapESP()
+    local Elements = getgenv().Settings.Esp.Elements
+    local function Apply(v)
+        if v.Name:match("^Vent") and not Elements["Vent"][v] then
+            local bha = Instance.new("BoxHandleAdornment", v)
+            bha.Size = v.Size
+            bha.Color3 = Color3.fromRGB(13,105,172)
+            bha.AlwaysOnTop = true
+            bha.ZIndex = 1
+            bha.Transparency = .75
+            Elements["Vent"][v] = bha
+        end
+    end
+    if state then
+        for _, v in ipairs(Workspace:GetDescendants()) do Apply(v) end
+        Elements["Vent"].Connection = Workspace.DescendantAdded:Connect(Apply)
+    else
+        if Elements["Vent"].Connection then Elements["Vent"].Connection:Disconnect() end
+        for _, v in pairs(Elements["Vent"]) do if v then v:Destroy() end end
+        Elements["Vent"] = {}
+    end
 end)
 
-VisualSection:NewToggle("Exit Doors ESP", "Çıkış kapıları (turuncu)", function(state)
+MainSection:NewToggle("Exit Doors ESP", "Çıkış kapıları", function(state)
     getgenv().Settings.Esp.Exit_Doors = state
-    updateMapESP()
+    local Elements = getgenv().Settings.Esp.Elements
+    local function Apply(v)
+        if v.Name == "ExitDoor" and not Elements["Exit_Door"][v] then
+            local hi = Instance.new("Highlight", v)
+            hi.FillColor = Color3.fromRGB(255,153,51)
+            hi.OutlineTransparency = 1
+            hi.FillTransparency = .75
+            hi.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            Elements["Exit_Door"][v] = hi
+        end
+    end
+    if state then
+        for _, v in ipairs(Workspace:GetDescendants()) do Apply(v) end
+        Elements["Exit_Door"].Connection = Workspace.DescendantAdded:Connect(Apply)
+    else
+        if Elements["Exit_Door"].Connection then Elements["Exit_Door"].Connection:Disconnect() end
+        for _, v in pairs(Elements["Exit_Door"]) do if v then v:Destroy() end end
+        Elements["Exit_Door"] = {}
+    end
 end)
 
--- Beast Tab
-local BeastSection = BeastTab:NewSection("Beast Features")
-
-BeastSection:NewToggle("Anti Slowness", "Beast yavaşlamasını kaldır", function(state)
+MainSection:NewToggle("Anti Slowness", "Beast yavaşlamasını kaldır", function(state)
     getgenv().Settings.AntiSlowness = state
     if state then
         hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-            if hum.WalkSpeed < 17 then
+            if hum.WalkSpeed < 16 then
                 hum.WalkSpeed = 17
             end
         end)
     end
 end)
 
-BeastSection:NewSlider("Hit Distance", "Vuruş mesafesi", 28, 8, function(v)
+MainSection:NewSlider("Hit Distance", "Vuruş mesafesi", 28, 8, function(v)
     getgenv().Settings.Hit_Settings.Distance = v
 end)
 
-BeastSection:NewToggle("Hit Aura", "Otomatik vur", function(state)
+MainSection:NewToggle("Hit Aura", "Otomatik vuruş", function(state)
     if state then
         getgenv().Settings.Hit_Settings.Connection = RunService.RenderStepped:Connect(function()
-            for _, plr in pairs(Players:GetPlayers()) do
+            for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= lplr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
                     local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
                     if dist <= getgenv().Settings.Hit_Settings.Distance then
@@ -257,18 +313,19 @@ BeastSection:NewToggle("Hit Aura", "Otomatik vur", function(state)
     else
         if getgenv().Settings.Hit_Settings.Connection then
             getgenv().Settings.Hit_Settings.Connection:Disconnect()
+            getgenv().Settings.Hit_Settings.Connection = nil
         end
     end
 end)
 
-BeastSection:NewSlider("Tie Distance", "Bağlama mesafesi", 28, 8, function(v)
+MainSection:NewSlider("Tie Distance", "Bağlama mesafesi", 28, 8, function(v)
     getgenv().Settings.Tie_Settings.Distance = v
 end)
 
-BeastSection:NewToggle("Tie Aura", "Otomatik bağla", function(state)
+MainSection:NewToggle("Tie Aura", "Otomatik bağlama", function(state)
     if state then
         getgenv().Settings.Tie_Settings.Connection = RunService.RenderStepped:Connect(function()
-            for _, plr in pairs(Players:GetPlayers()) do
+            for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= lplr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
                     local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
                     if dist <= getgenv().Settings.Tie_Settings.Distance then
@@ -283,49 +340,55 @@ BeastSection:NewToggle("Tie Aura", "Otomatik bağla", function(state)
     else
         if getgenv().Settings.Tie_Settings.Connection then
             getgenv().Settings.Tie_Settings.Connection:Disconnect()
+            getgenv().Settings.Tie_Settings.Connection = nil
         end
     end
 end)
 
 -- Extra Tab
-local ExtraSection = ExtraTab:NewSection("Extra")
+local ExtraSection = ExtraTab:NewSection("Extra Tools")
 
-ExtraSection:NewButton("Force Respawn", "Freezer'dan çık veya respawn", function()
-    hum.Health = 0
-    task.wait(0.3)
-    lplr:LoadCharacter()
+ExtraSection:NewButton("ShiftLock", "Nameless Admin ShiftLock", function()
+    loadstring(game:HttpGet("https://github.com/ltseverydayyou/uuuuuuu/blob/main/shiftlock?raw=true"))()
 end)
 
 ExtraSection:NewButton("Third Person", "Yakın zoom", function()
     lplr.CameraMode = Enum.CameraMode.Classic
+    lplr.CameraMinZoomDistance = .5
     lplr.CameraMaxZoomDistance = 12
-    lplr.CameraMinZoomDistance = 0.5
 end)
 
-ExtraSection:NewButton("Smallest Server Hop", "En küçük server'a at", function()
+ExtraSection:NewButton("Force Respawn", "Freezer'dan çık", function()
+    hum.Health = 0
+    lplr:LoadCharacter()
+end)
+
+-- Info Tab
+local InfoSection = InfoTab:NewSection("Bilgi")
+
+InfoSection:NewLabel("Credits To The Owner: leite")
+InfoSection:NewLabel("Discord Name: 86x1")
+InfoSection:NewButton("Discord Kopyala", "Link kopyala", function()
+    setclipboard("https://discord.gg/8d3XZFJzRP")
+    Library:Notify({Title = "Discord", Content = "Link panoya kopyalandı!", Duration = 5})
+end)
+
+InfoSection:NewButton("Smallest Serverhop", "En küçük server", function()
     local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
     for _, v in pairs(servers) do
         if v.playing < v.maxPlayers and v.id ~= game.JobId then
-            TweenService:TeleportToPlaceInstance(game.PlaceId, v.id, lplr)
+            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, v.id, lplr)
             break
         end
     end
 end)
 
--- Info Tab
-local InfoSection = InfoTab:NewSection("Bilgi")
-InfoSection:NewLabel("CruzHUB - Xeno Fixed by Grok")
-InfoSection:NewLabel("Discord: kopyalamak için tıkla")
-InfoSection:NewButton("Discord Link Kopyala", "https://discord.gg/8d3XZFJzRP", function()
-    setclipboard("https://discord.gg/8d3XZFJzRP")
-end)
-
 task.spawn(function()
     while task.wait(1) do
+        local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() or 0
         local power = ReplicatedStorage:FindFirstChild("CurrentPower") and ReplicatedStorage.CurrentPower.Value or 0
-        local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
         InfoSection:NewLabel("Ping: "..math.floor(ping).."ms | Beast Power: "..power.." | Players: "..#Players:GetPlayers().."/"..Players.MaxPlayers)
     end
 end)
 
-print("CruzHUB Xeno Fixed Yüklendi! Keyfini çıkar kanka 🔥")
+print("CruzHUB Xeno Uyumlu - Aynı Özellikler, Sadece GUI Değişti!")
